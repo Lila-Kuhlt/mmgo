@@ -3,9 +3,5 @@
 version = 3
 
 [[package]]
-name = "go-client"
+name = "tonk-client"
 version = "0.0.0"
-
-[[package]]
-name = "goto"
-version = "0.1.0"

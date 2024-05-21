@@ -84,7 +84,7 @@ pub(crate) fn parse_line(
 }
 pub(crate) fn accept_new_connections(listener: &TcpListener, game: &mut GameState) -> std::io::Result<()> {
     fn random_color() -> Color {
-        std::hash::DefaultHasher::new().finish() as Color
+        std::collections::hash_map::DefaultHasher::new().finish() as Color
     }
     loop {
         match listener.accept() {

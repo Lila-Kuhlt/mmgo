@@ -1,0 +1,5 @@
+[package]
+name = "go-client"
+version = "0.0.0"
+edition = "2021"
+authors = ["Lila Pause"]
