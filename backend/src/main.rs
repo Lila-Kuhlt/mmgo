@@ -30,6 +30,7 @@ impl GameState {
                     }
                     Ok(Command::Put(pos)) => user.next_stone = Some(pos),
                     Err(Error::WouldBlock) => break,
+                    Err(Error::IO(e)) if e.kind() == ErrorKind::WouldBlock => break,
                     Err(Error::IO(e)) if e.kind() == ErrorKind::ConnectionAborted => {
                         // TODO: remove user
                         eprintln!("Lost connection to {}", user.addr);
