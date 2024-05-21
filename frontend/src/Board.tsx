@@ -18,27 +18,66 @@ type Player = {
 }
 
 type BoardProps = {
-    size: number,
+    width: number,
+    height: number,
     players?: Player[]
 }
 
 export function Board(props: React.PropsWithChildren<BoardProps>) {
-    const size = props.size;
-    const pad = 90 / size;
+    const padding = 3;
+    const border = padding * 2;
 
-    return <svg xmlns="http://www.w3.org/2000/svg" width="960" height="960" viewBox="0 0 96 96">
-        <rect width="96" height="96" fill="#DCB35C" />
+    const width = Math.max(props.width, 3) - 1;
+    const height = Math.max(props.height, 3) - 1;
 
-        {[...new Array(size + 1)].map((_, i) => <Line x={3} y={i * pad + 3} len={90} dir="h" key={i} />)}
-        {[...new Array(size + 1)].map((_, i) => <Line x={i * pad + 3} y={3} len={90} dir="v" key={i} />)}
+    const viewboxWidth = width * 5;
+    const viewboxHeight = height * 5;
 
-        {props.players?.map(player => <circle
-            key={player.y * size + player.x}
-            cx={player.x * pad + 3}
-            cy={player.y * pad + 3}
-            fill={player.color}
-            r={40 / size}
-        />)}
+    const spaceH = viewboxWidth / width;
+    const spaceV = viewboxHeight / height;
+
+    const spaceMin = Math.max(spaceV, spaceH);
+
+    const range = (to: number) => [...new Array(to)].map((_, i) => i);
+
+    return <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width={(viewboxWidth + 2 * padding) * 10}
+        height={(viewboxHeight + 2 * padding) * 10}
+        viewBox={`0 0 ${viewboxWidth + border} ${viewboxHeight + border}`}>
+
+        <rect
+            width={viewboxWidth + 2 * padding}
+            height={viewboxHeight + 2 * padding}
+            fill="#DCB35C"
+        />
+
+        {range(height + 1).map(i =>
+            <Line
+                key={i}
+                dir="h"
+                x={padding} // offset
+                y={i * spaceH + padding}
+                len={viewboxWidth}
+            />)}
+
+        {range(width + 1).map(i =>
+            <Line
+                key={i}
+                dir="v"
+                x={i * spaceV + padding}
+                y={padding} // offset
+                len={viewboxHeight}
+            />)}
+
+        {props.players?.map(p =>
+            <circle
+                key={p.y * height + p.x}
+                cx={p.x * spaceH + padding}
+                cy={p.y * spaceV + padding}
+                fill={p.color}
+                r={(spaceMin / 2) * 0.9}
+            />)}
 
     </svg>
 }
