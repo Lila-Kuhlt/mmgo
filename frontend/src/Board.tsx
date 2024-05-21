@@ -30,8 +30,8 @@ export function Board(props: React.PropsWithChildren<BoardProps>) {
     const width = Math.max(props.width, 3) - 1;
     const height = Math.max(props.height, 3) - 1;
 
-    const viewboxWidth = width * 5;
-    const viewboxHeight = height * 5;
+    const viewboxHeight = height * 2.5;
+    const viewboxWidth = width * 2.5;
 
     const spaceH = viewboxWidth / width;
     const spaceV = viewboxHeight / height;
@@ -42,8 +42,8 @@ export function Board(props: React.PropsWithChildren<BoardProps>) {
 
     return <svg
         xmlns="http://www.w3.org/2000/svg"
-        width={(viewboxWidth + 2 * padding) * 10}
-        height={(viewboxHeight + 2 * padding) * 10}
+        height="100%"
+        width="100%"
         viewBox={`0 0 ${viewboxWidth + border} ${viewboxHeight + border}`}>
 
         <rect
@@ -76,7 +76,7 @@ export function Board(props: React.PropsWithChildren<BoardProps>) {
                 cx={p.x * spaceH + padding}
                 cy={p.y * spaceV + padding}
                 fill={p.color}
-                r={(spaceMin / 2) * 0.9}
+                r={(Math.min(spaceMin / 2, padding)) * 0.9}
             />)}
 
     </svg>
