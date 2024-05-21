@@ -54,8 +54,9 @@ impl FromStr for Command {
     type Err = Error;
 
     fn from_str(line: &str) -> Result<Self, Self::Err> {
-        let mut args = line.splitn(2, '\n');
+        let mut args = line.splitn(3, ' ');
         let args = std::array::from_fn(|_| args.next().unwrap_or_default());
+        dbg!(&args);
         match args {
             ["LOGIN", user, password] => Ok(Command::Login(user.to_owned(), password.to_owned())),
             ["PUT", x, y] => {
@@ -78,9 +79,13 @@ pub(crate) fn parse_line(
         .iter()
         .position(|a| a == &b'\n')
         .ok_or(Error::WouldBlock)?;
-    stream.read_exact(&mut buf[0..pos])?;
+    stream.read_exact(&mut buf[0..=pos])?;
     let str = std::str::from_utf8(&buf[0..pos])?;
-    parse(str)
+    if pos > 0 {
+        parse(str)
+    } else {
+        panic!("{:?}", &buf[..bytes]);
+    }
 }
 pub(crate) fn accept_new_connections(listener: &TcpListener, game: &mut GameState) -> std::io::Result<()> {
     fn random_color() -> Color {
