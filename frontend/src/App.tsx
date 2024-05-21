@@ -1,5 +1,4 @@
 import { Board } from "Board"
-import { useState } from "react";
 
 const PLAYERS = [
     {
@@ -15,10 +14,18 @@ const PLAYERS = [
 ];
 
 export function App() {
-    const [size, setSize] = useState(10);
-
-    return <h1 className="text-3xl font-bold underline">
-        <Board size={size} players={PLAYERS} />
-        <input type="range" min="3" max="50" value={size} onChange={(e) => setSize(parseInt(e.target.value))} />
-    </h1>
+    return <div className="flex justify-center items-center w-dvw h-dvh">
+        <div className="flex flex-row">
+            <Board size={20} players={PLAYERS} />
+            <div className="px-10">
+                <div className="h-full font-mono font-bold text-xl flex flex-col leading-5">
+                    <span>TURN: 2</span>
+                    <span>SIZE: 20</span>
+                    <span>ROUND: 20</span>
+                    <span>PLAYERS: 20</span>
+                    <hr className="bg-black h-[3px] py-2 mb-8"/>
+                </div>
+            </div>
+        </div>
+    </div>
 }

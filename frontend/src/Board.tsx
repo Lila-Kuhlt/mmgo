@@ -37,7 +37,7 @@ export function Board(props: React.PropsWithChildren<BoardProps>) {
             cx={player.x * pad + 3}
             cy={player.y * pad + 3}
             fill={player.color}
-            r={40/size}
+            r={40 / size}
         />)}
 
     </svg>
