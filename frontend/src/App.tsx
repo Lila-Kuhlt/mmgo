@@ -1,4 +1,5 @@
 import { Board } from "Board"
+import { QRCodeSVG } from "qrcode.react"
 
 const PLAYERS = [
     {
@@ -23,7 +24,10 @@ export function App() {
                     <span>SIZE: 20</span>
                     <span>ROUND: 20</span>
                     <span>PLAYERS: 20</span>
-                    <hr className="bg-black h-[3px] py-2 mb-8"/>
+                    <hr className="bg-black h-[3px] py-2 mb-4" />
+                    <a href="https://github.com/Lila-Kuhlt/mmgo" rel="noreferrer" target="_blank" >
+                        <QRCodeSVG value="https://github.com/Lila-Kuhlt/mmgo"  />
+                    </a>
                 </div>
             </div>
         </div>
