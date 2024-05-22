@@ -76,7 +76,10 @@ impl GameState {
         let message = tungstenite::Message::text(message);
 
         match frontend.send(message) {
+            Err(tungstenite::Error::Io(e))
+                if matches!(e.kind(), ErrorKind::ConnectionAborted | ErrorKind::BrokenPipe) => {}
             Err(e) => {
+                self.frontend = None;
                 eprintln!("Error while sending {e}");
             }
             _ => (),
