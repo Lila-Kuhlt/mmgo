@@ -2,11 +2,12 @@ mod game;
 mod network;
 
 use std::io::{ErrorKind, Write};
-use std::net::SocketAddr;
+use std::net::{SocketAddr, TcpStream};
 use std::time::Duration;
 use std::{net::TcpListener, str::FromStr};
 
 use network::{Connection, UserAuth};
+use tungstenite::WebSocket;
 
 use crate::game::Board;
 use crate::network::{Command, Error};
@@ -18,6 +19,7 @@ struct GameState {
     board: Board,
     chars: Vec<Option<SocketAddr>>,
     disconnected: Vec<SocketAddr>,
+    frontend: Option<WebSocket<TcpStream>>,
 }
 
 impl GameState {
@@ -67,6 +69,20 @@ impl GameState {
         }
     }
 
+    fn update_frontend(&mut self) {
+        let Some(ref mut frontend) = self.frontend else { return };
+        let state = self.board.serialize();
+        let message = format!("BOARD {} {} {}", self.board.width, self.board.height, state);
+        let message = tungstenite::Message::text(message);
+
+        match frontend.send(message) {
+            Err(e) => {
+                eprintln!("Error while sending {e}");
+            }
+            _ => (),
+        }
+    }
+
     fn broadcast_gamestate(&mut self) {
         let state = self.board.serialize();
         for user in self.users.iter_mut() {
@@ -91,10 +107,12 @@ impl GameState {
 }
 
 fn main() -> std::io::Result<()> {
-    let listener = TcpListener::bind("127.0.0.1:1312")?;
+    let listener = TcpListener::bind("0.0.0.0:1312")?;
+    let ws_listener = TcpListener::bind("0.0.0.0:1213")?;
     listener.set_nonblocking(true)?;
+    ws_listener.set_nonblocking(true)?;
     let mut game = GameState {
-        board: Board::new(10, 10),
+        board: Board::new(5, 5),
         chars: vec![None; 'z' as usize - 'A' as usize],
         ..Default::default()
     };
@@ -103,8 +121,12 @@ fn main() -> std::io::Result<()> {
         if let Err(e) = network::accept_new_connections(&listener, &mut game) {
             eprintln!("Error while accepting a new connection: {e}");
         }
+        if let Err(e) = network::accept_new_ws(&ws_listener, &mut game) {
+            eprintln!("Error while accepting a new connection: {e}");
+        }
         game.process_user_input();
         game.remove_disconnected_users();
+        game.update_frontend();
         game.broadcast_gamestate();
         std::thread::sleep(Duration::from_millis(500));
     }

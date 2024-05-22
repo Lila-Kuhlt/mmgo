@@ -7,3 +7,4 @@ edition = "2021"
 
 
 [dependencies]
+tungstenite = { version = "0.21.0", default-features = false, features = ["handshake"] }

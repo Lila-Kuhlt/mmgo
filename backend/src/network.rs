@@ -2,7 +2,7 @@ use std::{
     collections::{hash_map::Entry, HashMap},
     fmt::Display,
     hash::Hasher,
-    io::{ErrorKind, Read},
+    io::{ErrorKind, Read, Write},
     net::{SocketAddr, TcpListener, TcpStream},
     str::FromStr,
 };
@@ -118,6 +118,22 @@ pub(crate) fn accept_new_connections(listener: &TcpListener, game: &mut GameStat
                     next_stone: None,
                 };
                 game.users.push(con);
+            }
+            Err(ref e) if e.kind() == ErrorKind::WouldBlock => {
+                break;
+            }
+            Err(e) => eprintln!("socket error: {e}"),
+        }
+    }
+    Ok(())
+}
+pub(crate) fn accept_new_ws(listener: &TcpListener, game: &mut GameState) -> Result<(), Error> {
+    loop {
+        match listener.accept() {
+            Ok((mut stream, addr)) => {
+                println!("got new connection from {addr}");
+                let websocket = tungstenite::accept(stream).unwrap();
+                game.frontend = Some(websocket);
             }
             Err(ref e) if e.kind() == ErrorKind::WouldBlock => {
                 break;
