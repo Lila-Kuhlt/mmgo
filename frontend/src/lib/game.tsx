@@ -18,7 +18,7 @@ export type GameStateExt = GameState & { setState: (state: GameState) => void };
 export const GameStateContext = createContext<GameStateExt | null>(null);
 
 export function GameStateProvider(props: PropsWithChildren) {
-    const [gameState, setState] = useState(() => ({ width: 3, height: 3, turn: 0, board: parseBoard('.........', 3) }));
+    const [gameState, setState] = useState(() => ({ width: 3, height: 3, turn: 0, board: parseBoard('.........', 3, 3) }));
     const stateExt: GameStateExt = { ...gameState, setState: (game: GameState) => setState(game) };
 
     return <GameStateContext.Provider value={stateExt}>
@@ -33,18 +33,18 @@ export function parseMsg(msg: string): { board: Player[], width: number, height:
     const width = parseInt(widthStr)
     const height = parseInt(heightStr)
 
-    const board = parseBoard(pieces, width);
+    const board = parseBoard(pieces, width, height);
 
     return { width, height, board }
 }
 
-export function parseBoard(encBoard: string, width: number): Player[] {
+export function parseBoard(encBoard: string, width: number, height: number): Player[] {
     return encBoard.split('')
         .map((color, index) => ({
-                x: index % width,
-                y: Math.ceil(index / width),
-                color
-            })
+            x: index % width,
+            y: height - 1 - Math.floor((index) / width),
+            color
+        })
         )
         .filter(piece => piece.color !== '.')
 }
