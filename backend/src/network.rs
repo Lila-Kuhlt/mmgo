@@ -14,14 +14,20 @@ pub enum Error {
     InvalidArgument,
     UnknownCommand,
     InvalidCredentials,
+    ConnectionLost,
     WouldBlock,
+    GameFull,
     IO(std::io::Error),
     Utf8(std::str::Utf8Error),
 }
 
 impl From<std::io::Error> for Error {
     fn from(value: std::io::Error) -> Self {
-        Error::IO(value)
+        match value.kind() {
+            ErrorKind::WouldBlock => Error::WouldBlock,
+            ErrorKind::BrokenPipe | ErrorKind::ConnectionAborted => Error::ConnectionLost,
+            _ => Error::IO(value),
+        }
     }
 }
 impl From<std::str::Utf8Error> for Error {
@@ -36,6 +42,7 @@ pub(crate) struct Connection {
     pub(crate) addr: SocketAddr,
     pub(crate) username: Option<String>,
     color: Color,
+    pub(crate) char: u8,
     pub(crate) stream: TcpStream,
     pub(crate) next_stone: Option<Position>,
 }
@@ -46,6 +53,7 @@ impl Display for Error {
     }
 }
 
+#[derive(Debug, Clone)]
 pub(crate) enum Command {
     Login(String, String),
     Put(Position),
@@ -75,6 +83,9 @@ pub(crate) fn parse_line(
 ) -> Result<Command, Error> {
     let mut buf = [0; 1024];
     let bytes = stream.peek(&mut buf)?;
+    if bytes == 0 {
+        return Err(Error::ConnectionLost);
+    }
     let pos = buf[0..bytes]
         .iter()
         .position(|a| a == &b'\n')
@@ -87,7 +98,7 @@ pub(crate) fn parse_line(
         panic!("{:?}", &buf[..bytes]);
     }
 }
-pub(crate) fn accept_new_connections(listener: &TcpListener, game: &mut GameState) -> std::io::Result<()> {
+pub(crate) fn accept_new_connections(listener: &TcpListener, game: &mut GameState) -> Result<(), Error> {
     fn random_color() -> Color {
         std::collections::hash_map::DefaultHasher::new().finish() as Color
     }
@@ -95,10 +106,14 @@ pub(crate) fn accept_new_connections(listener: &TcpListener, game: &mut GameStat
         match listener.accept() {
             Ok((stream, addr)) => {
                 stream.set_nonblocking(true)?;
+                let Some(char) = game.alloc_char(addr) else {
+                    return Err(Error::GameFull);
+                };
                 let con = Connection {
                     addr,
                     username: None,
                     color: random_color(),
+                    char,
                     stream,
                     next_stone: None,
                 };

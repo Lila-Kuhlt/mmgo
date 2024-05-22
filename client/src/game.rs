@@ -32,6 +32,7 @@ impl GameState {
     }
 }
 
+#[derive(Debug, Default, Clone)]
 pub struct Map {
     width: u16,
     height: u16,
@@ -60,8 +61,9 @@ impl Map {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default, Debug)]
 pub enum Tile {
+    #[default]
     Empty,
     Wall,
     Player(u8),
