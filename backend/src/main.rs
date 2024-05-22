@@ -47,6 +47,14 @@ impl GameState {
         }
     }
 
+    fn place_pieces(&mut self) {
+        for user in &mut self.users {
+            if let Some((x, y)) = user.next_stone {
+                self.board.place(x as u16, y as u16, user.char)
+            }
+        }
+    }
+
     pub(crate) fn alloc_char(&mut self, addr: SocketAddr) -> Option<u8> {
         let pos = self.chars.iter().position(Option::is_none)?;
         self.chars[pos] = Some(addr);
@@ -129,6 +137,7 @@ fn main() -> std::io::Result<()> {
         }
         game.process_user_input();
         game.remove_disconnected_users();
+        game.place_pieces();
         game.update_frontend();
         game.broadcast_gamestate();
         std::thread::sleep(Duration::from_millis(500));
