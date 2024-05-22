@@ -1,3 +1,5 @@
+import { Player } from "lib/game"
+
 type LineProps = {
     x: number,
     y: number,
@@ -11,19 +13,14 @@ function Line({ x, y, len, dir }: LineProps) {
     />
 }
 
-type Player = {
-    x: number,
-    y: number,
-    color: string
-}
-
 type BoardProps = {
     width: number,
     height: number,
-    players?: Player[]
+    board?: Player[]
 }
 
 export function Board(props: React.PropsWithChildren<BoardProps>) {
+
     const padding = 3;
     const border = padding * 2;
 
@@ -70,7 +67,7 @@ export function Board(props: React.PropsWithChildren<BoardProps>) {
                 len={viewboxHeight}
             />)}
 
-        {props.players?.map(p =>
+        {props.board?.map(p =>
             <circle
                 key={p.y * height + p.x}
                 cx={p.x * spaceH + padding}
