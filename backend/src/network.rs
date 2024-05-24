@@ -2,7 +2,7 @@ use std::{
     collections::{hash_map::Entry, HashMap},
     fmt::Display,
     hash::Hasher,
-    io::{ErrorKind, Read, Write},
+    io::{ErrorKind, Read},
     net::{SocketAddr, TcpListener, TcpStream},
     str::FromStr,
 };
@@ -13,7 +13,6 @@ use crate::{game::Position, GameState};
 pub enum Error {
     InvalidArgument,
     UnknownCommand,
-    InvalidCredentials,
     ConnectionLost,
     WouldBlock,
     GameFull,
@@ -68,8 +67,8 @@ impl FromStr for Command {
         match args {
             ["LOGIN", user, password] => Ok(Command::Login(user.to_owned(), password.to_owned())),
             ["PUT", x, y] => {
-                let x: u32 = x.parse().map_err(|_| Error::InvalidArgument)?;
-                let y: u32 = y.parse().map_err(|_| Error::InvalidArgument)?;
+                let x: u16 = x.parse().map_err(|_| Error::InvalidArgument)?;
+                let y: u16 = y.parse().map_err(|_| Error::InvalidArgument)?;
                 Ok(Command::Put((x, y)))
             }
             _ => Err(Error::UnknownCommand),
@@ -130,7 +129,7 @@ pub(crate) fn accept_new_connections(listener: &TcpListener, game: &mut GameStat
 pub(crate) fn accept_new_ws(listener: &TcpListener, game: &mut GameState) -> Result<(), Error> {
     loop {
         match listener.accept() {
-            Ok((mut stream, addr)) => {
+            Ok((stream, addr)) => {
                 println!("got new connection from {addr}");
                 let websocket = tungstenite::accept(stream).unwrap();
                 game.frontend = Some(websocket);

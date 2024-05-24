@@ -48,9 +48,14 @@ impl GameState {
     }
 
     fn place_pieces(&mut self) {
-        for user in &mut self.users {
+        for user in &self.users {
             if let Some((x, y)) = user.next_stone {
-                self.board.place(x as u16, y as u16, user.char)
+                self.board.try_place(x as u16, y as u16, user.char)
+            }
+        }
+        for user in &mut self.users {
+            if let Some((x, y)) = user.next_stone.take() {
+                self.board.resolve_conflict(x, y);
             }
         }
     }
