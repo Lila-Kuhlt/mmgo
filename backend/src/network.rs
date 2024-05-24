@@ -5,9 +5,13 @@ use std::{
     io::{ErrorKind, Read},
     net::{SocketAddr, TcpListener, TcpStream},
     str::FromStr,
+    time::{Duration, SystemTime},
 };
 
-use crate::{game::Position, GameState};
+use crate::{
+    game::{Board, Position},
+    GameState,
+};
 
 #[derive(Debug)]
 pub enum Error {
@@ -57,6 +61,7 @@ pub(crate) enum Command {
     Login(String, String),
     Put(Position),
 }
+
 impl FromStr for Command {
     type Err = Error;
 
@@ -156,6 +161,30 @@ impl UserAuth {
                 Some(key)
             }
             Entry::Occupied(o) => (o.get() == &password).then(|| o.key().clone()),
+        }
+    }
+}
+
+pub(crate) enum FrontendMessage<'a> {
+    Board(&'a Board),
+    End,
+}
+
+impl<'a> Display for FrontendMessage<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FrontendMessage::Board(board) => {
+                write!(
+                    f,
+                    "BOARD {:?} {} {} {}",
+                    board
+                        .unix_timestamp(),
+                    board.width,
+                    board.height,
+                    board.serialize()
+                )
+            }
+            FrontendMessage::End => write!(f, "END"),
         }
     }
 }

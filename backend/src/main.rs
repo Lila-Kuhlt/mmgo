@@ -6,13 +6,13 @@ use std::net::{SocketAddr, TcpStream};
 use std::time::Duration;
 use std::{net::TcpListener, str::FromStr};
 
-use network::{Connection, UserAuth};
+use network::{Connection, FrontendMessage, UserAuth};
 use tungstenite::WebSocket;
 
 use crate::game::Board;
 use crate::network::{Command, Error};
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 struct GameState {
     users: Vec<Connection>,
     user_auth: UserAuth,
@@ -23,6 +23,17 @@ struct GameState {
 }
 
 impl GameState {
+    fn new(size: u16) -> Self {
+        GameState {
+            board: Board::new(size, size),
+            chars: vec![None; 'z' as usize - 'A' as usize],
+            users: Vec::new(),
+            user_auth: UserAuth::default(),
+            disconnected: Vec::new(),
+            frontend: None,
+        }
+    }
+
     fn process_user_input(&mut self) {
         for user in self.users.iter_mut() {
             loop {
@@ -82,12 +93,9 @@ impl GameState {
         }
     }
 
-    fn update_frontend(&mut self) {
+    fn send_frontend(&mut self, msg: String) {
         let Some(ref mut frontend) = self.frontend else { return };
-        let state = self.board.serialize();
-        let message = format!("BOARD {} {} {}", self.board.width, self.board.height, state);
-        let message = tungstenite::Message::text(message);
-
+        let message = tungstenite::Message::text(msg);
         match frontend.send(message) {
             Err(tungstenite::Error::Io(e))
                 if matches!(e.kind(), ErrorKind::ConnectionAborted | ErrorKind::BrokenPipe) => {}
@@ -97,6 +105,10 @@ impl GameState {
             }
             _ => (),
         }
+    }
+
+    fn update_frontend(&mut self) {
+        self.send_frontend(FrontendMessage::Board(&self.board).to_string());
     }
 
     fn broadcast_gamestate(&mut self) {
@@ -110,7 +122,6 @@ impl GameState {
                 Err(e) if e.kind() == ErrorKind::ConnectionAborted => (),
                 Err(e) if e.kind() == ErrorKind::BrokenPipe => (),
                 Err(e) if matches!(e.kind(), ErrorKind::ConnectionAborted | ErrorKind::BrokenPipe) => {
-                    dbg!("foo");
                     self.disconnected.push(user.addr);
                 }
                 Err(e) => {
@@ -127,12 +138,7 @@ fn main() -> std::io::Result<()> {
     let ws_listener = TcpListener::bind("0.0.0.0:1213")?;
     listener.set_nonblocking(true)?;
     ws_listener.set_nonblocking(true)?;
-    let mut game = GameState {
-        board: Board::new(20, 20),
-        chars: vec![None; 'z' as usize - 'A' as usize],
-        ..Default::default()
-    };
-
+    let mut game = GameState::new(100);
     loop {
         if let Err(e) = network::accept_new_connections(&listener, &mut game) {
             eprintln!("Error while accepting a new connection: {e}");
@@ -145,6 +151,7 @@ fn main() -> std::io::Result<()> {
         game.place_pieces();
         game.update_frontend();
         game.broadcast_gamestate();
-        std::thread::sleep(Duration::from_millis(500));
+
+        std::thread::sleep(Duration::from_millis(300));
     }
 }

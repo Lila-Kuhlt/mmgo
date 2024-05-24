@@ -1,14 +1,17 @@
+use std::time::{Duration, SystemTime};
+
 use self::uf::UnionFind;
 
 pub(crate) type Position = (u16, u16);
 
 mod uf;
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct Board {
     tiles: Vec<Tile>,
     pub(crate) width: u16,
     pub(crate) height: u16,
+    pub(crate) start: SystemTime,
     uf: UnionFind,
 }
 
@@ -18,6 +21,7 @@ impl Board {
             tiles: vec![Tile::Empty; usize::from(width) * usize::from(height)],
             width,
             height,
+            start: SystemTime::now(),
             uf: UnionFind::new(usize::from(width * height)),
         }
     }
@@ -27,6 +31,7 @@ impl Board {
         let y = usize::from(y.min(self.height));
         x + usize::from(self.width) * y
     }
+
     fn tile_mut(&mut self, x: u16, y: u16) -> Option<&mut Tile> {
         let index = self.index(x, y);
         self.tiles.get_mut(index)
@@ -71,6 +76,17 @@ impl Board {
                 stack.push((i, j))
             }
         }
+    }
+
+    pub(crate) fn reset_timer(&mut self) {
+        self.start = SystemTime::now()
+    }
+
+    pub(crate) fn unix_timestamp(&self) -> u128 {
+        self.start
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap_or(Duration::ZERO)
+            .as_millis()
     }
 }
 

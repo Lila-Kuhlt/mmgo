@@ -15,7 +15,8 @@ export interface GameState {
 export interface Board {
     board: Player[],
     width: number,
-    height: number
+    height: number,
+    start: Date
 }
 
 
@@ -26,7 +27,7 @@ export const GameStateContext = createContext<GameStateExt | null>(null);
 export function GameStateProvider(props: PropsWithChildren) {
     const [gameState, setState] = useState<GameState>({
         turn: 0,
-        board: parseBoard('.........', 3, 3)
+        board: { ...parseBoard('.........', 3, 3), start: new Date() },
     });
 
     const stateExt: GameStateExt = { ...gameState, setState };
@@ -38,15 +39,16 @@ export function GameStateProvider(props: PropsWithChildren) {
 
 
 export function parseMsg(msg: string): Board {
-    const [_, widthStr, heightStr, pieces] = msg.split(" ");
+    const [_, startStr, widthStr, heightStr, pieces] = msg.split(" ");
 
-    const width = parseInt(widthStr)
-    const height = parseInt(heightStr)
+    const start = new Date(parseInt(startStr));
+    const width = parseInt(widthStr);
+    const height = parseInt(heightStr);
 
-    return parseBoard(pieces, width, height)
+    return { ...parseBoard(pieces, width, height), start }
 }
 
-export function parseBoard(encBoard: string, width: number, height: number): Board {
+export function parseBoard(encBoard: string, width: number, height: number): Omit<Board, 'start'> {
     const board = encBoard.split('')
         .map((color, index) => ({
             x: index % width,

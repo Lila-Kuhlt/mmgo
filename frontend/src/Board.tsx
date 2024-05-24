@@ -25,8 +25,8 @@ export function Board(props: React.PropsWithChildren<BoardProps>) {
     const padding = 1;
     const border = padding * 2;
 
-    const width = Math.max(props.width, 3) - 1;
-    const height = Math.max(props.height, 3) - 1;
+    const width = Math.max(props.width, 2) - 1;
+    const height = Math.max(props.height, 2) - 1;
 
     const viewboxHeight = height * 2.5;
     const viewboxWidth = width * 2.5;
@@ -72,7 +72,7 @@ export function Board(props: React.PropsWithChildren<BoardProps>) {
 
         {props.board?.map(p =>
             <circle
-                key={p.y * height + p.x}
+                key={`${p.x}-${p.y}`}
                 cx={p.x * spaceH + padding}
                 cy={p.y * spaceV + padding}
                 fill={p.color}
