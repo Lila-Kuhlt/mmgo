@@ -123,7 +123,7 @@ fn main() -> std::io::Result<()> {
     listener.set_nonblocking(true)?;
     ws_listener.set_nonblocking(true)?;
     let mut game = GameState {
-        board: Board::new(5, 5),
+        board: Board::new(20, 20),
         chars: vec![None; 'z' as usize - 'A' as usize],
         ..Default::default()
     };

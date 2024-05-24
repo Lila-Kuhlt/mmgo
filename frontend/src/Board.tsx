@@ -17,11 +17,12 @@ type BoardProps = {
     width: number,
     height: number,
     board?: Player[]
+    backgroundColor?: string,
 }
 
 export function Board(props: React.PropsWithChildren<BoardProps>) {
 
-    const padding = 3;
+    const padding = 1;
     const border = padding * 2;
 
     const width = Math.max(props.width, 3) - 1;
@@ -35,6 +36,8 @@ export function Board(props: React.PropsWithChildren<BoardProps>) {
 
     const spaceMin = Math.max(spaceV, spaceH);
 
+    const backgroundColor = props.backgroundColor || "#ffffff";
+
     const range = (to: number) => [...new Array(to)].map((_, i) => i);
 
     return <svg
@@ -46,7 +49,7 @@ export function Board(props: React.PropsWithChildren<BoardProps>) {
         <rect
             width={viewboxWidth + 2 * padding}
             height={viewboxHeight + 2 * padding}
-            fill="#DCB35C"
+            fill={backgroundColor}
         />
 
         {range(height + 1).map(i =>
@@ -73,7 +76,9 @@ export function Board(props: React.PropsWithChildren<BoardProps>) {
                 cx={p.x * spaceH + padding}
                 cy={p.y * spaceV + padding}
                 fill={p.color}
-                r={(Math.min(spaceMin / 2, padding)) * 0.9}
+                stroke={backgroundColor}
+                strokeWidth={.1}
+                r={(padding > 0 ? Math.min(spaceMin / 2, padding) : spaceMin / 2)}
             />)}
 
     </svg>

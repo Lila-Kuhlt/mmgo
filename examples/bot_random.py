@@ -58,7 +58,7 @@ def main():
     init(url='localhost', port=1312)
     width = int(getWidth())
     height = int(getHeight())
-    for i in range(width * height):
+    while True:
         # put random moves
         put(random.randint(0, width - 1), random.randint(0, height - 1))
         print(getBoard())
