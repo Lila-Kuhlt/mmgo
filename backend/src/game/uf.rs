@@ -45,9 +45,9 @@ impl UnionFind {
         }
     }
 
-    pub fn add_liberty(&mut self, x: usize, n: usize) {
+    pub fn add_liberty(&mut self, x: usize, n: isize) {
         let root = self.find(x);
-        self.liberties[root] += n;
+        self.liberties[root] = self.liberties[root].saturating_add_signed(n);
     }
 
     pub fn get_liberties(&mut self, x: usize) -> usize {

@@ -69,6 +69,11 @@ impl GameState {
                 self.board.resolve_conflict(x, y);
             }
         }
+        for user in &mut self.users {
+            if let Some((x, y)) = user.next_stone.take() {
+                self.board.kill_neighbors(x, y);
+            }
+        }
     }
 
     pub(crate) fn alloc_char(&mut self, addr: SocketAddr) -> Option<u8> {
