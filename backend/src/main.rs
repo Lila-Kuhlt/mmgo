@@ -65,7 +65,7 @@ impl GameState {
             }
         }
         for user in &mut self.users {
-            if let Some((x, y)) = user.next_stone.take() {
+            if let Some((x, y)) = user.next_stone {
                 self.board.resolve_conflict(x, y);
             }
         }
@@ -143,7 +143,7 @@ fn main() -> std::io::Result<()> {
     let ws_listener = TcpListener::bind("0.0.0.0:1213")?;
     listener.set_nonblocking(true)?;
     ws_listener.set_nonblocking(true)?;
-    let mut game = GameState::new(50);
+    let mut game = GameState::new(5);
     loop {
         if let Err(e) = network::accept_new_connections(&listener, &mut game) {
             eprintln!("Error while accepting a new connection: {e}");
@@ -157,6 +157,6 @@ fn main() -> std::io::Result<()> {
         game.update_frontend();
         game.broadcast_gamestate();
 
-        std::thread::sleep(Duration::from_millis(300));
+        std::thread::sleep(Duration::from_millis(600));
     }
 }

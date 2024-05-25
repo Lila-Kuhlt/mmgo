@@ -6,11 +6,14 @@ pub struct UnionFind {
 }
 
 impl UnionFind {
-    pub fn new(n: usize) -> Self {
+    pub fn new(width: usize, height: usize) -> Self {
+        let n = width * height;
+        // Set initial liberties substracting the rim
+        let liberties = (0..n).map(|x| 4 - (x % width == 0) as usize - (x / width % height == 0) as usize);
         UnionFind {
             parent: (0..n).collect(),
             size: vec![1; n],
-            liberties: vec![4; n], // initial liberties set to 4 for simplicity
+            liberties: liberties.collect(),
         }
     }
 

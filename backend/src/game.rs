@@ -22,7 +22,7 @@ impl Board {
             width,
             height,
             start: SystemTime::now(),
-            uf: UnionFind::new(usize::from(width * height)),
+            uf: UnionFind::new(width as usize, height as usize),
         }
     }
 
@@ -34,8 +34,11 @@ impl Board {
 
     fn is_suicide(&mut self, x: u16, y: u16, id: u8) -> bool {
         let empty_tiles = self.adjacent_filter(x, y, Tile::Empty);
-        let mut player_tiles = self.adjacent_filter(x, y, Tile::Player(id));
-        (empty_tiles.count() == 0) && player_tiles.all(|(x, y)| self.uf.get_liberties(self.index(x, y)) < 2)
+        let mut other_players = self.adjacent_tiles(x, y).filter_map(|(_, _, t)| match t {
+            Tile::Player(id) => Some((self.uf.get_liberties(self.index(x, y)), id)),
+            _ => None,
+        });
+        (empty_tiles.count() == 0) && other_players.all(|(libs, oid)| if oid == id { libs < 2 } else { libs > 1 })
     }
 
     fn tile_mut(&mut self, x: u16, y: u16) -> Option<&mut Tile> {
@@ -99,12 +102,14 @@ impl Board {
     }
 
     fn remove_group(&mut self, x: u16, y: u16) {
+        dbg!("removing tiles", x, y);
         let tile = *self.tile_mut(x, y).expect("Tried to remove non board space");
         let mut stack = vec![(x, y, tile)];
         while let Some((x, y, t)) = stack.pop() {
             if t == tile {
                 self.uf.reset_node(self.index(x, y));
-                self.adjacent_tiles(x, y).for_each(|d| stack.push(d))
+                self.adjacent_tiles(x, y).for_each(|d| stack.push(d));
+                *self.tile_mut(x, y).unwrap() = Tile::Empty;
             }
         }
     }
