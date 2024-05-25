@@ -38,8 +38,8 @@ export function GameStateProvider(props: PropsWithChildren) {
 }
 
 
-export function parseMsg(msg: string): Board {
-    const [_, startStr, widthStr, heightStr, pieces] = msg.split(" ");
+export function parseMsg(msg: string[]): Board {
+    const [startStr, widthStr, heightStr, pieces] = msg;
 
     const start = new Date(parseInt(startStr));
     const width = parseInt(widthStr);

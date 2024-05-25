@@ -1,53 +1,84 @@
-import { createContext, useState, useEffect, useRef, PropsWithChildren } from 'react';
+import { createContext, useState, useEffect, PropsWithChildren } from 'react';
 
-export interface WebSocketState {
-    ws: WebSocket | null;
-    isConnected: boolean;
-}
+/**
+ * WebSocket Disconnect Codes
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code
+ */
+const WEBSOCKET_CODES = {
+    CLOSE_NORMAL: 1000,
+    CLOSE_GOING_AWAY: 1001,
+    CLOSE_ABNORMAL: 1006,
+    SERVER_ERROR: 1011,
+    SERVICE_RESTART: 1012,
+};
 
-export interface WebsocketProviderProps {
-    url: string,
-    onMsg: (msg: string) => void
-}
+export type MsgHandler = (msg: string[]) => void;
 
-export const WebSocketContext = createContext<WebSocketState | null>(null);
+export class WebSocketHandler {
 
-export function WebSocketProvider(props: PropsWithChildren<WebsocketProviderProps>) {
-    const [ws, setWs] = useState<WebSocket | null>(null);
-    const [isConnected, setIsConnected] = useState<boolean>(false);
-    const reconnectInterval = useRef<number | null>(null);
+    private handlers: Record<string, MsgHandler> = {}
+    private ws?: WebSocket;
+    private addr: string;
+    private reconnectHandle?: number;
+    private reconnectInterval: number = 1200;
 
-    const connect = () => {
-        const newWs = new WebSocket(props.url);
-        setWs(newWs);
-    };
+    constructor(ws: string) {
+        this.addr = ws;
+        this.connect();
+    }
 
-    useEffect(() => {
-        if (!ws) return;
+    public isOpen() {
+        return this.ws?.readyState === WebSocket.OPEN
+    }
 
-        ws.onopen = () => setIsConnected(true);
-        ws.onmessage = (event: MessageEvent) => props.onMsg?.(event.data);
+    private connect() {
+        this.ws = new WebSocket(this.addr);
+        this.ws.onopen = this.onOpen.bind(this);
+        this.ws.onclose = this.onClose.bind(this);
+        this.ws.onmessage = this.onMessage.bind(this);
+    }
 
-        ws.onclose = () => {
-            setIsConnected(false);
-            reconnectInterval.current && clearTimeout(reconnectInterval.current);
-            reconnectInterval.current = setTimeout(connect, 5000);
-        };
 
-        return () => {
-            ws.close();
-            reconnectInterval.current && clearTimeout(reconnectInterval.current);
-        };
+    public disconnect() {
+        this.ws?.close();
+    }
 
-    }, [ws]);
+    public registerHandler(what: string, handler: MsgHandler) {
+        this.handlers[what] = handler;
+    }
 
-    useEffect(() => {
-        if (!isConnected) {
-            connect();
+    private onMessage(message: MessageEvent) {
+        if (typeof message.data !== "string") return;
+        const msg = message.data.split(' ');
+        this.handlers[msg[0].toUpperCase()]?.(msg.slice(1));
+    }
+
+    private onOpen() {
+        clearInterval(this.reconnectHandle)
+    }
+
+    private onClose() {
+        if (this.reconnectHandle === undefined) {
+            this.connect()
+            return;
         }
-    }, [isConnected]);
 
-    return <WebSocketContext.Provider value={{ ws, isConnected }}>
+        this.reconnectHandle = setInterval(() => this.connect(), this.reconnectInterval);
+    }
+}
+
+export const WebSocketContext = createContext<WebSocketHandler | null>(null);
+
+export function WebSocketProvider(props: PropsWithChildren<{ url: string }>) {
+    const [ws, setWs] = useState<WebSocketHandler | null>(null);
+
+    useEffect(() => {
+        const ws = new WebSocketHandler(props.url);
+        setWs(ws);
+        return () => ws.disconnect();
+    }, [props.url]);
+
+    return <WebSocketContext.Provider value={ws}>
         {props.children}
     </WebSocketContext.Provider>
 };

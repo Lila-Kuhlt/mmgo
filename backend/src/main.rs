@@ -143,7 +143,7 @@ fn main() -> std::io::Result<()> {
     let ws_listener = TcpListener::bind("0.0.0.0:1213")?;
     listener.set_nonblocking(true)?;
     ws_listener.set_nonblocking(true)?;
-    let mut game = GameState::new(100);
+    let mut game = GameState::new(50);
     loop {
         if let Err(e) = network::accept_new_connections(&listener, &mut game) {
             eprintln!("Error while accepting a new connection: {e}");

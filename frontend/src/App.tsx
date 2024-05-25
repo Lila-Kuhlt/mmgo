@@ -1,51 +1,50 @@
 import { Board } from "Board"
-import { GameStateContext, GameStateExt, GameStateProvider, parseMsg } from "lib/game";
-import { WebSocketProvider, } from "lib/ws";
+import { GameStateContext, GameStateProvider, parseMsg } from "lib/game";
+import { WebSocketContext, WebSocketProvider, } from "lib/ws";
 import { QRCodeSVG } from "qrcode.react"
 import { useContext, useEffect, useState } from "react";
 
 export function App() {
+    return <GameStateProvider>
+        <WebSocketProvider url="ws://localhost:1213">
 
-    function updateState(msg: string, gameStateExt: GameStateExt | null) {
-        return gameStateExt?.setState((state) => {
-            return ({
-                board: parseMsg(msg),
-                turn: state.turn + 1
-            })
-        });
-    }
+            <div className="flex justify-center items-center w-dvw h-dvh">
+                <div className="flex flex-row h-dvh py-10">
+                    <Game />
+                    <Sidebar />
+                </div >
+            </div>
 
-    return (<GameStateProvider>
-
-        <GameStateContext.Consumer>
-            {gameState =>
-                <WebSocketProvider url="ws://localhost:1213" onMsg={(msg) => updateState(msg, gameState)}>
-
-                    <div className="flex justify-center items-center w-dvw h-dvh">
-                        <div className="flex flex-row h-dvh py-10">
-                            <BoardWrapper />
-                            <Sidebar />
-                        </div >
-                    </div>
-
-                </WebSocketProvider>
-            }
-        </GameStateContext.Consumer>
-    </GameStateProvider>)
-
+        </WebSocketProvider>
+    </GameStateProvider>
 }
 
-function BoardWrapper() {
+function ConnectionUnavailable() {
+    return <div className="flex flex-col jusify-center items-center">
+        <h1 className="text-xl text-gray-500">Waiting for the Server to start</h1>
+    </div>
+}
+
+function Game() {
     const gameState = useContext(GameStateContext);
+    const websocket = useContext(WebSocketContext);
+
+    websocket?.registerHandler("BOARD", (msg) => gameState?.setState((state) => ({
+        board: parseMsg(msg),
+        turn: state.turn + 1
+    })));
 
     const width = gameState?.board.width || 3;
     const height = gameState?.board.height || 3;
+
+    if (!websocket?.isOpen()) return <ConnectionUnavailable />
 
     return <Board width={width} height={height} board={gameState?.board.board || undefined} />
 }
 
 
 function Sidebar() {
+    const ws = useContext(WebSocketContext);
     const gameState = useContext(GameStateContext);
     const [time, setTime] = useState("00:00");
 
@@ -65,11 +64,11 @@ function Sidebar() {
             <span>TURN: {gameState?.turn || 0}</span>
             <span>TIME: {time}</span>
             <span>SIZE: {gameState?.board.width || 3}x{gameState?.board.height || 3}</span>
+            <span>SERVER: {ws?.isOpen() ? "CONNECTED" : "LOST"}</span>
             <hr className="bg-black h-[3px] py-2 mb-4" />
-            <a href="https://github.com/Lila-Kuhlt/mmgo" rel="noreferrer" target="_blank" >
-                <QRCodeSVG value="https://github.com/Lila-Kuhlt/mmgo" />
+            <a href="https://github.com/Lila-Kuhlt/mmgo" rel="noreferrer" target="_blank" className="w-fill flex justify-center">
+                <QRCodeSVG value="https://github.com/Lila-Kuhlt/mmgo" size={190}/>
             </a>
-            <hr className="bg-black h-[3px] py-2 my-4" />
         </div>
     </div>
 }
