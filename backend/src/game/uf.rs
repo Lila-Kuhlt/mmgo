@@ -9,7 +9,7 @@ impl UnionFind {
     pub fn new(width: usize, height: usize) -> Self {
         let n = width * height;
         // Set initial liberties substracting the rim
-        let liberties = (0..n).map(|x| 4 - (x % width == 0) as usize - (x / width % height == 0) as usize);
+        let liberties = (0..n).map(|x| 4 - (x % (width - 1) == 0) as usize - (x / width % (height - 1) == 0) as usize);
         UnionFind {
             parent: (0..n).collect(),
             size: vec![1; n],
@@ -41,16 +41,8 @@ impl UnionFind {
         }
     }
 
-    pub fn subtract_liberty(&mut self, x: usize) {
-        let root = self.find(x);
-        if self.liberties[root] > 0 {
-            self.liberties[root] -= 1;
-        }
-    }
-
-    pub fn add_liberty(&mut self, x: usize, n: isize) {
-        let root = self.find(x);
-        self.liberties[root] = self.liberties[root].saturating_add_signed(n);
+    pub fn add_liberty(&mut self, group: usize, n: isize) {
+        self.liberties[group] = self.liberties[group].saturating_add_signed(n);
     }
 
     pub fn get_liberties(&mut self, x: usize) -> usize {

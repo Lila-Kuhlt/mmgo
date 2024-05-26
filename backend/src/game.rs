@@ -1,4 +1,7 @@
-use std::time::{Duration, SystemTime};
+use std::{
+    array,
+    time::{Duration, SystemTime},
+};
 
 use self::uf::UnionFind;
 
@@ -41,6 +44,20 @@ impl Board {
         (empty_tiles.count() == 0) && other_players.all(|(libs, oid)| if oid == id { libs < 2 } else { libs > 1 })
     }
 
+    pub(crate) fn print_board(&mut self) {
+        println!("Board:");
+        for x in 0..self.width {
+            for y in 0..self.height {
+                print!(
+                    "{}{}",
+                    self.tiles[self.index(x, y)].to_char(),
+                    self.uf.get_liberties(self.index(x, y))
+                );
+            }
+            println!("");
+        }
+    }
+
     fn tile_mut(&mut self, x: u16, y: u16) -> Option<&mut Tile> {
         let index = self.index(x, y);
         self.tiles.get_mut(index)
@@ -63,8 +80,8 @@ impl Board {
         let Some(mut tile) = self.tile(x, y) else { return };
         tile = match tile {
             Tile::TryPlace(id) => {
-                self.adjacent_tiles(x, y)
-                    .for_each(|(x, y, _)| self.uf.subtract_liberty(self.index(x, y)));
+                self.adjacent_groups(x, y).for_each(|g| self.uf.add_liberty(g, -1));
+                // Unify adjacent player controlled groups into one
                 self.adjacent_filter(x, y, Tile::Player(id))
                     .for_each(|(x, y)| self.uf.union(index, self.index(x, y)));
 
@@ -109,6 +126,7 @@ impl Board {
             if t == tile {
                 self.uf.reset_node(self.index(x, y));
                 self.adjacent_tiles(x, y).for_each(|d| stack.push(d));
+                self.adjacent_groups(x, y).for_each(|g| self.uf.add_liberty(g, 1));
                 *self.tile_mut(x, y).unwrap() = Tile::Empty;
             }
         }
@@ -117,6 +135,16 @@ impl Board {
     fn adjacent_filter(&self, x: u16, y: u16, tile: Tile) -> impl Iterator<Item = (u16, u16)> {
         self.adjacent_tiles(x, y)
             .filter_map(move |(x, y, t)| (t == tile).then(|| (x, y)))
+    }
+
+    fn adjacent_groups(&mut self, x: u16, y: u16) -> impl Iterator<Item = usize> {
+        let mut iter = self.adjacent_tiles(x, y);
+        let mut tiles: [_; 4] = array::from_fn(|_| iter.next().map(|(x, y, _)| self.uf.find(self.index(x, y))));
+
+        tiles.sort();
+        dedup(&mut tiles);
+
+        tiles.into_iter().flatten()
     }
 
     pub(crate) fn reset_timer(&mut self) {
@@ -160,5 +188,16 @@ impl Tile {
             Tile::Player(c) => *c as char,
             _ => unreachable!("Forgot to clean up intermediate board state"),
         }
+    }
+}
+
+fn dedup<const N: usize, T: Eq>(array: &mut [Option<T>; N]) {
+    let mut last_unique = 0;
+
+    for next_candidate in 1..N {
+        if array[last_unique] == array[next_candidate] {
+            array[last_unique] = None;
+        }
+        last_unique = next_candidate;
     }
 }

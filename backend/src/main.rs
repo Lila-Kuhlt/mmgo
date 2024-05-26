@@ -117,6 +117,7 @@ impl GameState {
     }
 
     fn broadcast_gamestate(&mut self) {
+        self.board.print_board();
         let state = self.board.serialize();
         for user in self.users.iter_mut() {
             match writeln!(

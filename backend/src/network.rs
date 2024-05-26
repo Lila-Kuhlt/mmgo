@@ -5,7 +5,6 @@ use std::{
     io::{ErrorKind, Read},
     net::{SocketAddr, TcpListener, TcpStream},
     str::FromStr,
-    time::{Duration, SystemTime},
 };
 
 use crate::{
@@ -61,7 +60,6 @@ pub(crate) enum Command {
     Login(String, String),
     Put(Position),
 }
-
 impl FromStr for Command {
     type Err = Error;
 
@@ -99,7 +97,7 @@ pub(crate) fn parse_line(
     if pos > 0 {
         parse(str)
     } else {
-        panic!("{:?}", &buf[..bytes]);
+        Err(Error::WouldBlock)
     }
 }
 pub(crate) fn accept_new_connections(listener: &TcpListener, game: &mut GameState) -> Result<(), Error> {
@@ -177,8 +175,7 @@ impl<'a> Display for FrontendMessage<'a> {
                 write!(
                     f,
                     "BOARD {:?} {} {} {}",
-                    board
-                        .unix_timestamp(),
+                    board.unix_timestamp(),
                     board.width,
                     board.height,
                     board.serialize()
