@@ -9,7 +9,13 @@ impl UnionFind {
     pub fn new(width: usize, height: usize) -> Self {
         let n = width * height;
         // Set initial liberties substracting the rim
-        let liberties = (0..n).map(|x| 4 - (x % (width - 1) == 0) as usize - (x / width % (height - 1) == 0) as usize);
+        let liberties = (0..n).map(|i| {
+            let x = i % width;
+            let y = i / height;
+            return 4
+                - (x % (width - 1) == 0 && y % (height - 1) == 0) as usize
+                - (x % (width - 1) == 0 || y % (height - 1) == 0) as usize;
+        });
         UnionFind {
             parent: (0..n).collect(),
             size: vec![1; n],
