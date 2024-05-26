@@ -12,9 +12,9 @@ impl UnionFind {
         let liberties = (0..n).map(|i| {
             let x = i % width;
             let y = i / height;
-            return 4
-                - (x % (width - 1) == 0 && y % (height - 1) == 0) as usize
-                - (x % (width - 1) == 0 || y % (height - 1) == 0) as usize;
+            return 4 // Default
+                - (x % (width - 1) == 0 && y % (height - 1) == 0) as usize  // corners
+                - (x % (width - 1) == 0 || y % (height - 1) == 0) as usize; // borders
         });
         UnionFind {
             parent: (0..n).collect(),
